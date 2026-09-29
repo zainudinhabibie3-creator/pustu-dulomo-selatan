@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puskesmas Pembantu Dulomo Selatan - Pendaftaran Pelayanan Kesehatan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                            teal: '#0d9488',
+                            darkteal: '#0f766e',
+                            /* Magenta KIA Theme */
+                            kia: '#db2777',
+                            darkkia: '#be185d',
+                            kiasoft: '#fdf2f8',
+                            kiaborder: '#fbcfe8'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 flex flex-col antialiased" id="body-root">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+        <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="router.navigate('home')">
+                <div id="header-logo-icon" class="w-10 h-10 rounded-full bg-brand-teal text-white flex items-center justify-center font-bold text-lg shadow-sm transition-colors duration-300">
+                    <i class="fa-solid fa-house-medical"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-900 text-sm leading-tight">PUSTU DULOMO SELATAN</h1>
+                    <p class="text-xs text-slate-500">Kesehatan Ibu & Anak</p>
+                </div>
+            </div>
+            <nav class="flex items-center space-x-1 sm:space-x-2">
+                <button onclick="router.navigate('home')" class="px-3 py-1.5 text-xs font-medium rounded-lg text-slate-700 hover:bg-slate-100 transition"><i class="fa-solid fa-house mr-1"></i> Beranda</button>
+                <button onclick="router.navigate('services')" class="px-3 py-1.5 text-xs font-medium rounded-lg text-slate-700 hover:bg-slate-100 transition"><i class="fa-solid fa-notes-medical mr-1"></i> Layanan</button>
+                <button onclick="router.navigate('info')" class="px-3 py-1.5 text-xs font-medium rounded-lg text-slate-700 hover:bg-slate-100 transition"><i class="fa-solid fa-circle-info mr-1"></i> Info</button>
+                <button onclick="router.navigate('admin-login')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-brand-700 border border-brand-200 hover:bg-emerald-100 transition" id="header-admin-btn"><i class="fa-solid fa-user-shield mr-1"></i> Admin</button>
+            </nav>
+        </div>
+    </header>
+
+    <main id="app-container" class="flex-1 max-w-2xl w-full mx-auto px-4 py-6 overflow-y-auto">
+        <!-- Dynamic content will render here -->
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        <div class="max-w-2xl mx-auto px-4 space-y-1">
+            <p class="font-semibold text-slate-700">Puskesmas Pembantu (Pustu) Dulomo Selatan</p>
+            <p>Melayani dengan Sepenuh Hati • 2026</p>
+            <div class="pt-2 flex justify-center space-x-4">
+                <a href="#" onclick="router.openPrivacyModal(); return false;" class="text-brand-teal hover:underline" id="footer-privacy-link">Kebijakan Privasi</a>
+                <span>•</span>
+                <a href="#" onclick="router.navigate('info'); return false;" class="text-brand-teal hover:underline" id="footer-contact-link">Kontak Bidan</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global Modal Container -->
+    <div id="modal-container" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden backdrop-blur-xs">
+        <!-- Modal content dynamic -->
+    </div>
+
+    <script>
+        const DB = {
+            getSettings() {
+                const defaultSettings = {
+                    facilityName: "Puskesmas Pembantu Dulomo Selatan",
+                    whatsappNumber: "6281234567890",
+                    address: "Jl. Dulomo Selatan, Kec. Kota Utara, Kota Gorontalo",
+                    serviceHours: "Senin – Sabtu, 08:00 - 14:00 WITA",
+                    phone: "(0435) 123456",
+                    otherConfig: "Membawa KTP/KK dan Buku KIA saat kunjungan."
+                };
+                const saved = localStorage.getItem('pustu_settings');
+                return saved ? JSON.parse(saved) : defaultSettings;
+            },
+            saveSettings(newSettings) {
+                localStorage.setItem('pustu_settings', JSON.stringify(newSettings));
+            },
+            getAdminPassword() {
+                return localStorage.getItem('pustu_admin_pass') || 'admin123';
+            },
+            saveAdminPassword(newPass) {
+                localStorage.setItem('pustu_admin_pass', newPass);
+            },
+            getTheme() {
+                return localStorage.getItem('pustu_theme') || 'teal'; // 'teal' or 'kia' (magenta)
+            },
+            saveTheme(theme) {
+                localStorage.setItem('pustu_theme', theme);
+                applyTheme();
+            },
+            getPosyanduSchedules() {
+                const saved = localStorage.getItem('pustu_schedules');
+                if (saved) return JSON.parse(saved);
+                const defaultSchedules = [
+                    { id: 'pos-1', title: 'Posyandu Balita Mawar 1', date: 'Setiap Hari Selasa Minggu ke-1', time: '08:30 WITA', location: 'Aula Pustu Dulomo Selatan' },
+                    { id: 'pos-2', title: 'Pelayanan Ibu Hamil & KIA', date: 'Setiap Hari Rabu', time: '08:00 WITA', location: 'Ruang Pemeriksaan Pustu' },
+                    { id: 'pos-3', title: 'Penyuluhan & Imunisasi Balita', date: 'Setiap Hari Sabtu Minggu ke-3', time: '09:00 WITA', location: 'Poskesdes / Pustu' }
+                ];
+                localStorage.setItem('pustu_schedules', JSON.stringify(defaultSchedules));
+                return defaultSchedules;
+            },
+            savePosyanduSchedule(sched) {
+                const list = this.getPosyanduSchedules();
+                list.unshift(sched);
+                localStorage.setItem('pustu_schedules', JSON.stringify(list));
+            },
+            deletePosyanduSchedule(id) {
+                let list = this.getPosyanduSchedules();
+                list = list.filter(s => s.id !== id);
+                localStorage.setItem('pustu_schedules', JSON.stringify(list));
+            },
+            getPatients() {
+                const saved = localStorage.getItem('pustu_patients');
+                return saved ? JSON.parse(saved) : [];
+            },
+            savePatient(patientData) {
+                const patients = this.getPatients();
+                patients.push(patientData);
+                localStorage.setItem('pustu_patients', JSON.stringify(patients));
+            },
+            getRegistrations() {
+                const saved = localStorage.getItem('pustu_registrations');
+                if (saved) return JSON.parse(saved);
+                const sample = [
+                    {
+                        id: "reg-1",
+                        registrationNumber: "PDS-20260929-0001",
+                        patientId: "pat-1",
+                        serviceType: "Pelayanan Ibu Hamil",
+                        visitDate: "2026-09-30",
+                        visitTime: "Pagi",
+                        purpose: "Pemeriksaan kehamilan rutin",
+                        complaint: "Mual ringan di pagi hari",
+                        notes: "Mohon membawa buku KIA",
+                        formData: {
+                            full_name: "Siti Rahmawati",
+                            nik: "7571012345678901",
+                            birth_date: "1998-05-12",
+                            age: "28",
+                            address: "Jl. Merdeka No. 12",
+                            kelurahan: "Dulomo Selatan",
+                            rt: "001",
+                            rw: "002",
+                            husband_name: "Ahmad Fauzi",
+                            pregnancy_age: "24 Minggu",
+                            pregnancy_order: "Anak ke-2",
+                            children_count: "1",
+                            phone: "081298765432",
+                            companion: "Suami"
+                        },
+                        whatsappStatus: "OPENED",
+                        registrationStatus: "TERDAFTAR",
+                        adminStatus: "BARU",
+                        createdAt: "2026-09-29T08:15:00Z",
+                        history: [
+                            { timestamp: "29 Sep 2026 08:15", text: "Pendaftaran dibuat & data tersimpan" },
+                            { timestamp: "29 Sep 2026 08:16", text: "WhatsApp dibuka otomatis" }
+                        ]
+                    }
+                ];
+                localStorage.setItem('pustu_registrations', JSON.stringify(sample));
+                return sample;
+            },
+            saveRegistration(reg) {
+                const regs = this.getRegistrations();
+                regs.unshift(reg);
+                localStorage.setItem('pustu_registrations', JSON.stringify(regs));
+            },
+            updateRegistrationStatus(id, regStatus, adminStatus, note) {
+                const regs = this.getRegistrations();
+                const idx = regs.findIndex(r => r.id === id);
+                if (idx !== -1) {
+                    if (regStatus) regs[idx].registrationStatus = regStatus;
+                    if (adminStatus) regs[idx].adminStatus = adminStatus;
+                    const nowStr = new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+                    if (!regs[idx].history) regs[idx].history = [];
+                    regs[idx].history.push({
+                        timestamp: nowStr,
+                        text: `Status diperbarui: Reg(${regs[idx].registrationStatus}) / Admin(${regs[idx].adminStatus})${note ? ' - ' + note : ''}`
+                    });
+                    localStorage.setItem('pustu_registrations', JSON.stringify(regs));
+                    return true;
+                }
+                return false;
+            }
+        };
+
+        function applyTheme() {
+            const theme = DB.getTheme();
+            const logoIcon = document.getElementById('header-logo-icon');
+            const adminBtn = document.getElementById('header-admin-btn');
+            const privacyLink = document.getElementById('footer-privacy-link');
+            const contactLink = document.getElementById('footer-contact-link');
+
+            if (theme === 'kia') {
+                if (logoIcon) {
+                    logoIcon.classList.remove('bg-brand-teal');
+                    logoIcon.classList.add('bg-brand-kia');
+                }
+                if (adminBtn) {
+                    adminBtn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-pink-50 text-brand-kia border border-pink-200 hover:bg-pink-100 transition";
+                }
+                if (privacyLink) privacyLink.className = "text-brand-kia hover:underline";
+                if (contactLink) contactLink.className = "text-brand-kia hover:underline";
+            } else {
+                if (logoIcon) {
+                    logoIcon.classList.remove('bg-brand-kia');
+                    logoIcon.classList.add('bg-brand-teal');
+                }
+                if (adminBtn) {
+                    adminBtn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-brand-700 border border-brand-200 hover:bg-emerald-100 transition";
+                }
+                if (privacyLink) privacyLink.className = "text-brand-teal hover:underline";
+                if (contactLink) contactLink.className = "text-brand-teal hover:underline";
+            }
+        }
+
+        const AppState = {
+            currentView: 'home',
+            selectedService: 'Pelayanan Ibu Hamil',
+            formData: {
+                visit_date: '',
+                visit_time: 'Pagi',
+                purpose: '',
+                complaint: '',
+                notes: '',
+                full_name: '',
+                nik: '',
+                birth_date: '',
+                age: '',
+                address: '',
+                kelurahan: 'Dulomo Selatan',
+                rt: '',
+                rw: '',
+                husband_name: '',
+                pregnancy_age: '',
+                pregnancy_order: '',
+                children_count: '',
+                phone: '',
+                companion: '',
+                baby_name: '',
+                child_nik: '',
+                kk_number: '',
+                gender: 'Laki-laki',
+                mother_name: '',
+                father_name: ''
+            },
+            agreedToTerms: false,
+            lastCreatedRegistration: null,
+            adminLoggedIn: false
+        };
+
+        const router = {
+            navigate(view) {
+                AppState.currentView = view;
+                window.scrollTo(0, 0);
+                this.render();
+                applyTheme();
+            },
+            render() {
+                const container = document.getElementById('app-container');
+                container.innerHTML = '';
+                
+                switch(AppState.currentView) {
+                    case 'home':
+                        container.innerHTML = Views.renderHome();
+                        break;
+                    case 'services':
+                        container.innerHTML = Views.renderServices();
+                        break;
+                    case 'form':
+                        container.innerHTML = Views.renderForm();
+                        break;
+                    case 'review':
+                        container.innerHTML = Views.renderReview();
+                        break;
+                    case 'success':
+                        container.innerHTML = Views.renderSuccess();
+                        break;
+                    case 'info':
+                        container.innerHTML = Views.renderInfo();
+                        break;
+                    case 'admin-login':
+                        container.innerHTML = Views.renderAdminLogin();
+                        break;
+                    case 'admin':
+                        if (!AppState.adminLoggedIn) {
+                            container.innerHTML = Views.renderAdminLogin();
+                        } else {
+                            container.innerHTML = Views.renderAdminDashboard();
+                        }
+                        break;
+                    default:
+                        container.innerHTML = Views.renderHome();
+                }
+                applyTheme();
+            },
+            openPrivacyModal() {
+                const modal = document.getElementById('modal-container');
+                modal.classList.remove('hidden');
+                const theme = DB.getTheme();
+                const btnBg = theme === 'kia' ? 'bg-brand-kia hover:bg-brand-darkkia' : 'bg-brand-teal hover:bg-brand-darkteal';
+                const iconColor = theme === 'kia' ? 'text-brand-kia' : 'text-brand-teal';
+
+                modal.innerHTML = `
+                    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-lg text-slate-900"><i class="fa-solid fa-shield-halved ${iconColor} mr-2"></i> Kebijakan Privasi Pustu</h3>
+                            <button onclick="router.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+                        </div>
+                        <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+                            <p>Puskesmas Pembantu (Pustu) Dulomo Selatan berkomitmen menjaga kerahasiaan dan keamanan data pribadi serta kesehatan Anda.</p>
+                            <p><strong>Penggunaan Data:</strong> Seluruh data yang Anda masukkan hanya digunakan untuk keperluan administrasi pelayanan kesehatan, penjadwalan kunjungan, dan komunikasi langsung dengan Bidan penanggung jawab.</p>
+                            <p><strong>Keamanan:</strong> Data disimpan secara aman dalam sistem terenkripsi dan tidak dibagikan kepada pihak ketiga manapun di luar tenaga medis berwenang Pustu Dulomo Selatan.</p>
+                        </div>
+                        <div class="mt-6 text-right">
+                            <button onclick="router.closeModal()" class="${btnBg} text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm transition">Tutup</button>
+                        </div>
+                    </div>
+                `;
+            },
+            closeModal() {
+                document.getElementById('modal-container').classList.add('hidden');
+            }
+        };
+
+        const Views = {
+            renderHome() {
+                const settings = DB.getSettings();
+                const schedules = DB.getPosyanduSchedules();
+                const theme = DB.getTheme();
+                const heroBg = theme === 'kia' ? 'from-brand-kia to-pink-800' : 'from-brand-teal to-emerald-700';
+
+                return `
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-br ${heroBg} rounded-3xl p-6 text-white shadow-xl relative overflow-hidden transition-colors duration-300">
+                            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+                            <div class="relative z-10 space-y-4">
+                                <div class="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-white">
+                                    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                                    <span>Pelayanan Kesehatan Resmi</span>
+                                </div>
+                                <h2 class="text-2xl font-extrabold tracking-tight leading-tight">${settings.facilityName}</h2>
+                                <p class="text-xs text-slate-50 leading-relaxed">Daftarkan rencana kunjungan kesehatan Anda dan buah hati dengan mudah, cepat, dan terintegrasi langsung melalui smartphone.</p>
+                                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                                    <button onclick="router.navigate('services')" class="w-full sm:w-auto bg-white text-slate-800 hover:bg-slate-100 font-bold px-6 py-3.5 rounded-2xl shadow-lg transition flex items-center justify-center space-x-2 text-sm">
+                                        <i class="fa-solid fa-calendar-check text-brand-teal text-base"></i>
+                                        <span>Daftar Pelayanan Sekarang</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-start space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-lg shrink-0">
+                                    <i class="fa-regular fa-clock"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Jam Pelayanan</h4>
+                                    <p class="text-sm font-bold text-slate-800 mt-0.5">${settings.serviceHours}</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-start space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-lg shrink-0">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Lokasi Pustu</h4>
+                                    <p class="text-sm font-bold text-slate-800 mt-0.5">${settings.address}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Public Posyandu Schedule Board -->
+                        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-slate-900 text-base"><i class="fa-solid fa-calendar-alt text-brand-teal mr-2"></i> Papan Jadwal Posyandu & Layanan</h3>
+                                <span class="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full font-semibold">Aktif</span>
+                            </div>
+                            <div class="grid grid-cols-1 gap-3">
+                                ${schedules.map(s => `
+                                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start space-x-3">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center shrink-0 font-bold">
+                                            <i class="fa-solid fa-calendar-day"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="text-sm font-bold text-slate-900">${s.title}</h4>
+                                            <p class="text-xs text-slate-700 font-semibold mt-0.5">${s.date} • ${s.time}</p>
+                                            <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${s.location}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-sm">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-sm">Butuh Bantuan Bidan?</h4>
+                                    <p class="text-xs text-slate-600">Hubungi petugas atau konsultasi darurat langsung.</p>
+                                </div>
+                            </div>
+                            <a href="https://wa.me/${settings.whatsappNumber}?text=Halo%20Bidan,%20saya%20ingin%20berkonsultasi." target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition">
+                                Chat Bidan
+                            </a>
+                        </div>
+                    </div>
+                `;
+            },
+            renderServices() {
+                const theme = DB.getTheme();
+                const hoverBorder = theme === 'kia' ? 'hover:border-brand-kia' : 'hover:border-brand-teal';
+                const hoverBg = theme === 'kia' ? 'group-hover:bg-brand-kia' : 'group-hover:bg-brand-teal';
+                const textHover = theme === 'kia' ? 'group-hover:text-brand-kia' : 'group-hover:text-brand-teal';
+
+                return `
+                    <div class="space-y-6">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between text-xs font-semibold text-slate-400">
+                            <div class="flex items-center space-x-2 text-brand-teal">
+                                <div class="w-6 h-6 rounded-full bg-brand-teal text-white flex items-center justify-center text-xs">1</div>
+                                <span class="hidden sm:inline">Layanan</span>
+                            </div>
+                            <div class="h-0.5 flex-1 bg-slate-200 mx-2"></div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">2</div>
+                                <span class="hidden sm:inline">Kunjungan</span>
+                            </div>
+                            <div class="h-0.5 flex-1 bg-slate-200 mx-2"></div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">3</div>
+                                <span class="hidden sm:inline">Identitas</span>
+                            </div>
+                            <div class="h-0.5 flex-1 bg-slate-200 mx-2"></div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">4</div>
+                                <span class="hidden sm:inline">Konfirmasi</span>
+                            </div>
+                        </div>
+
+                        <div class="text-center space-y-2">
+                            <h2 class="text-xl font-extrabold text-slate-900">Pilih Jenis Pelayanan</h2>
+                            <p class="text-xs text-slate-500">Silakan pilih kategori pelayanan kesehatan yang ingin Anda daftarkan di Pustu Dulomo Selatan.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4">
+                            <div onclick="formHandler.selectService('Pelayanan Ibu Hamil')" class="bg-white p-5 rounded-3xl border-2 border-slate-200 ${hoverBorder} transition cursor-pointer shadow-xs group flex flex-col justify-between">
+                                <div class="flex items-start space-x-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition">
+                                        <i class="fa-solid fa-person-pregnant"></i>
+                                    </div>
+                                    <div class="flex-1 space-y-1">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-bold text-slate-900 text-base ${textHover} transition">A. Pelayanan Ibu Hamil</h3>
+                                            <span class="text-xs bg-rose-50 text-rose-700 font-semibold px-2.5 py-1 rounded-full">Antenatal Care</span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 leading-relaxed">Pemeriksaan kehamilan rutin, pemantauan kesehatan ibu dan janin, serta konsultasi gizi.</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                                    <span class="text-xs text-slate-400 font-medium">Estimasi pengisian: 2 menit</span>
+                                    <span class="bg-slate-100 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl ${hoverBg} group-hover:text-white transition flex items-center space-x-1">
+                                        <span>Pilih Layanan</span>
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div onclick="formHandler.selectService('Pelayanan Ibu / Nifas')" class="bg-white p-5 rounded-3xl border-2 border-slate-200 ${hoverBorder} transition cursor-pointer shadow-xs group flex flex-col justify-between">
+                                <div class="flex items-start space-x-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition">
+                                        <i class="fa-solid fa-child-reaching"></i>
+                                    </div>
+                                    <div class="flex-1 space-y-1">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-bold text-slate-900 text-base ${textHover} transition">B. Pelayanan Ibu / Nifas</h3>
+                                            <span class="text-xs bg-purple-50 text-purple-700 font-semibold px-2.5 py-1 rounded-full">Postpartum Care</span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 leading-relaxed">Pelayanan kesehatan bagi ibu setelah persalinan (nifas), perawatan luka, dan pemulihan.</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                                    <span class="text-xs text-slate-400 font-medium">Estimasi pengisian: 2 menit</span>
+                                    <span class="bg-slate-100 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl ${hoverBg} group-hover:text-white transition flex items-center space-x-1">
+                                        <span>Pilih Layanan</span>
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div onclick="formHandler.selectService('Pelayanan Bayi & Balita')" class="bg-white p-5 rounded-3xl border-2 border-slate-200 ${hoverBorder} transition cursor-pointer shadow-xs group flex flex-col justify-between">
+                                <div class="flex items-start space-x-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition">
+                                        <i class="fa-solid fa-baby"></i>
+                                    </div>
+                                    <div class="flex-1 space-y-1">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-bold text-slate-900 text-base ${textHover} transition">C. Pelayanan Bayi & Balita</h3>
+                                            <span class="text-xs bg-blue-50 text-blue-700 font-semibold px-2.5 py-1 rounded-full">Posyandu / Anak</span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 leading-relaxed">Pemeriksaan tumbuh kembang, penimbangan berat/tinggi badan, imunisasi rutin.</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                                    <span class="text-xs text-slate-400 font-medium">Estimasi pengisian: 2 menit</span>
+                                    <span class="bg-slate-100 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl ${hoverBg} group-hover:text-white transition flex items-center space-x-1">
+                                        <span>Pilih Layanan</span>
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button onclick="router.navigate('home')" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 rounded-2xl text-xs transition">
+                                ← Kembali ke Beranda
+                            </button>
+                        </div>
+                    </div>
+                `;
+            },
+            renderForm() {
+                const today = new Date().toISOString().split('T')[0];
+                const service = AppState.selectedService || 'Pelayanan Ibu Hamil';
+                
+                return `
+                    <div class="space-y-6">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between text-xs font-semibold text-slate-400">
+                            <div class="flex items-center space-x-2 text-slate-700">
+                                <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">✓</div>
+                                <span class="hidden sm:inline">Layanan</span>
+                            </div>
+                            <div class="h-0.5 flex-1 bg-slate-300 mx-2"></div>
+                            <div class="flex items-center space-x-2 font-bold text-slate-800">
+                                <div class="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs">2-3</div>
+                                <span class="hidden sm:inline">Formulir Pendaftaran</span>
+                            </div>
+                            <div class="h-0.5 flex-1 bg-slate-200 mx-2"></div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">4</div>
+                                <span class="hidden sm:inline">Konfirmasi</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-100 border border-slate-200 p-4 rounded-2xl flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Layanan Terpilih</span>
+                                <h3 class="font-extrabold text-slate-900 text-base">${service}</h3>
+                            </div>
+                            <button onclick="router.navigate('services')" class="text-xs text-slate-700 font-semibold hover:underline">Ubah Layanan</button>
+                        </div>
+
+                        <form id="registration-form" onsubmit="formHandler.handleSubmitForm(event)" class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-5">
+                            <div class="space-y-4">
+                                <h4 class="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100 flex items-center">
+                                    <i class="fa-solid fa-calendar-days text-slate-600 mr-2"></i> Rencana Kunjungan
+                                </h4>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Kunjungan <span class="text-rose-500">*</span></label>
+                                        <input type="date" id="visit_date" name="visit_date" min="${today}" value="${AppState.formData.visit_date || today}" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Perkiraan Waktu <span class="text-rose-500">*</span></label>
+                                        <select id="visit_time" name="visit_time" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                            <option value="Pagi" ${AppState.formData.visit_time === 'Pagi' ? 'selected' : ''}>Pagi (08:00 - 11:30 WITA)</option>
+                                            <option value="Siang" ${AppState.formData.visit_time === 'Siang' ? 'selected' : ''}>Siang (13:00 - 15:00 WITA)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tujuan Kunjungan <span class="text-rose-500">*</span></label>
+                                    <input type="text" id="purpose" name="purpose" placeholder="Contoh: Pemeriksaan rutin / Imunisasi" value="${AppState.formData.purpose || ''}" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Keluhan / Kebutuhan Pelayanan</label>
+                                    <textarea id="complaint" name="complaint" rows="2" placeholder="Tuliskan jika ada keluhan..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">${AppState.formData.complaint || ''}</textarea>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4 pt-2">
+                                <h4 class="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100 flex items-center">
+                                    <i class="fa-solid fa-id-card text-slate-600 mr-2"></i> Identitas Penerima Layanan
+                                </h4>
+
+                                ${service === 'Pelayanan Bayi & Balita' ? `
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Bayi / Balita <span class="text-rose-500">*</span></label>
+                                            <input type="text" name="baby_name" value="${AppState.formData.baby_name || ''}" required placeholder="Nama anak" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">NIK Anak / KK</label>
+                                            <input type="text" name="child_nik" maxlength="16" value="${AppState.formData.child_nik || ''}" placeholder="16 digit NIK" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">No. KK <span class="text-rose-500">*</span></label>
+                                            <input type="text" name="kk_number" maxlength="16" value="${AppState.formData.kk_number || ''}" required placeholder="16 digit No. KK" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Kelamin <span class="text-rose-500">*</span></label>
+                                            <select name="gender" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                                <option value="Laki-laki">Laki-laki</option>
+                                                <option value="Perempuan">Perempuan</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Lahir <span class="text-rose-500">*</span></label>
+                                            <input type="date" name="birth_date" value="${AppState.formData.birth_date || ''}" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Ibu Kandung <span class="text-rose-500">*</span></label>
+                                            <input type="text" name="mother_name" value="${AppState.formData.mother_name || ''}" required placeholder="Nama ibu" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Ayah</label>
+                                            <input type="text" name="father_name" value="${AppState.formData.father_name || ''}" placeholder="Nama ayah" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap <span class="text-rose-500">*</span></label>
+                                            <input type="text" name="full_name" value="${AppState.formData.full_name || ''}" required placeholder="Sesuai KTP" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">NIK (16 Digit) <span class="text-rose-500">*</span></label>
+                                            <input type="text" name="nik" maxlength="16" value="${AppState.formData.nik || ''}" required placeholder="Nomor KTP" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Lahir <span class="text-rose-500">*</span></label>
+                                            <input type="date" name="birth_date" value="${AppState.formData.birth_date || ''}" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Suami <span class="text-rose-500">*</span></label>
+                                            <input type="text" name="husband_name" value="${AppState.formData.husband_name || ''}" required placeholder="Nama suami" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                    </div>
+                                `}
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Domisili <span class="text-rose-500">*</span></label>
+                                        <input type="text" name="address" value="${AppState.formData.address || ''}" required placeholder="Nama jalan / Gang" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kelurahan <span class="text-rose-500">*</span></label>
+                                        <input type="text" name="kelurahan" value="Dulomo Selatan" readonly class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-100 text-xs font-bold text-slate-700">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">RT</label>
+                                            <input type="text" name="rt" maxlength="3" value="${AppState.formData.rt || ''}" placeholder="001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">RW</label>
+                                            <input type="text" name="rw" maxlength="3" value="${AppState.formData.rw || ''}" placeholder="002" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp Aktif <span class="text-rose-500">*</span></label>
+                                        <input type="tel" name="phone" value="${AppState.formData.phone || ''}" required placeholder="Contoh: 081234567890" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan untuk Bidan</label>
+                                    <input type="text" name="notes" value="${AppState.formData.notes || ''}" placeholder="Opsional" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                </div>
+                            </div>
+
+                            <div class="pt-4 flex items-center justify-between space-x-3">
+                                <button type="button" onclick="router.navigate('services')" class="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 rounded-2xl text-xs transition">
+                                    ← Kembali
+                                </button>
+                                <button type="submit" class="w-2/3 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-2xl text-xs shadow-md transition flex items-center justify-center space-x-2">
+                                    <span>Lanjut ke Review</span>
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+            },
+            renderReview() {
+                const data = AppState.formData;
+                const service = AppState.selectedService;
+                return `
+                    <div class="space-y-6">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between text-xs font-semibold text-slate-400">
+                            <div class="flex items-center space-x-2 text-slate-700">
+                                <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">✓</div>
+                                <span class="hidden sm:inline">Layanan</span>
+                            </div>
+                            <div class="h-0.5 flex-1 bg-slate-300 mx-2"></div>
+                            <div class="flex items-center space-x-2 text-slate-700">
+                                <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">✓</div>
+                                <span class="hidden sm:inline">Formulir</span>
+                            </div>
+                            <div class="h-0.5 flex-1 bg-slate-300 mx-2"></div>
+                            <div class="flex items-center space-x-2 text-slate-900 font-bold">
+                                <div class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">4</div>
+                                <span class="hidden sm:inline">Konfirmasi & Kirim</span>
+                            </div>
+                        </div>
+
+                        <div class="text-center space-y-2">
+                            <h2 class="text-xl font-extrabold text-slate-900">Konfirmasi Pendaftaran</h2>
+                            <p class="text-xs text-slate-500">Periksa kembali data Anda sebelum dikirimkan kepada Bidan Pustu Dulomo Selatan.</p>
+                        </div>
+
+                        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs divide-y divide-slate-100 overflow-hidden">
+                            <div class="p-5 bg-slate-50 flex justify-between items-center">
+                                <div>
+                                    <span class="text-xs font-semibold text-slate-500">JENIS PELAYANAN</span>
+                                    <h4 class="font-extrabold text-slate-900 text-base">${service}</h4>
+                                </div>
+                                <button onclick="router.navigate('form')" class="text-xs font-semibold text-slate-700 hover:underline bg-white px-3 py-1.5 rounded-xl border border-slate-200">Edit</button>
+                            </div>
+
+                            <div class="p-5 space-y-2">
+                                <h5 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-calendar-days text-slate-600 mr-1"></i> Rencana Kunjungan</h5>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div><span class="text-slate-400">Tanggal:</span> <strong class="text-slate-800">${data.visit_date}</strong></div>
+                                    <div><span class="text-slate-400">Waktu:</span> <strong class="text-slate-800">${data.visit_time}</strong></div>
+                                    <div class="col-span-2"><span class="text-slate-400">Tujuan:</span> <strong class="text-slate-800">${data.purpose}</strong></div>
+                                </div>
+                            </div>
+
+                            <div class="p-5 space-y-2">
+                                <h5 class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-id-card text-slate-600 mr-1"></i> Identitas & Kontak</h5>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div><span class="text-slate-400">Nama:</span> <strong class="text-slate-800">${data.full_name || data.baby_name}</strong></div>
+                                    <div><span class="text-slate-400">NIK:</span> <strong class="text-slate-800">${data.nik || data.child_nik || data.kk_number}</strong></div>
+                                    <div class="col-span-2"><span class="text-slate-400">Alamat:</span> <strong class="text-slate-800">${data.address}, RT ${data.rt || '-'}/RW ${data.rw || '-'}, Kel. ${data.kelurahan}</strong></div>
+                                    <div><span class="text-slate-400">WhatsApp:</span> <strong class="text-emerald-700 font-bold">${data.phone}</strong></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+                            <label class="flex items-start space-x-3 cursor-pointer">
+                                <input type="checkbox" id="terms-checkbox" onchange="formHandler.toggleTerms(this)" class="mt-0.5 w-4 h-4 text-slate-800 rounded border-slate-300">
+                                <span class="text-xs text-slate-700 leading-relaxed">
+                                    Saya memastikan seluruh data di atas sudah benar dan <strong class="text-slate-900">menyetujui</strong> data saya digunakan untuk keperluan pelayanan kesehatan di Pustu Dulomo Selatan.
+                                </span>
+                            </label>
+
+                            <div class="flex items-center space-x-3 pt-2">
+                                <button onclick="router.navigate('form')" class="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3.5 rounded-2xl text-xs transition">
+                                    ← Edit Data
+                                </button>
+                                <button id="submit-btn" disabled onclick="formHandler.confirmAndSubmit()" class="w-2/3 bg-slate-300 text-slate-500 font-bold py-3.5 rounded-2xl text-xs shadow-none cursor-not-allowed transition flex items-center justify-center space-x-2">
+                                    <i class="fa-brands fa-whatsapp text-base"></i>
+                                    <span>Konfirmasi & Kirim ke WhatsApp</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+            renderSuccess() {
+                const reg = AppState.lastCreatedRegistration;
+                return `
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-lg text-center space-y-6">
+                        <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner animate-bounce">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h2 class="text-2xl font-extrabold text-slate-900">Pendaftaran Berhasil!</h2>
+                            <p class="text-xs text-slate-500">Data pendaftaran Anda telah tersimpan aman di sistem Pustu Dulomo Selatan.</p>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-1">
+                            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nomor Pendaftaran Utama</span>
+                            <div class="text-xl font-black text-slate-900 tracking-wide">${reg ? reg.registrationNumber : 'PDS-20260929-0001'}</div>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-left space-y-2 text-xs text-slate-600 leading-relaxed">
+                            <p class="font-bold text-slate-800"><i class="fa-solid fa-circle-info text-slate-700 mr-1"></i> Langkah Selanjutnya:</p>
+                            <p>WhatsApp telah disiapkan secara otomatis. Silakan tekan tombol di bawah untuk membuka WhatsApp, lalu tekan tombol <strong>"Kirim"</strong> pada aplikasi WhatsApp.</p>
+                        </div>
+
+                        <div class="space-y-3 pt-2">
+                            <button onclick="formHandler.openWhatsAppAgain()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl text-sm shadow-md transition flex items-center justify-center space-x-2">
+                                <i class="fa-brands fa-whatsapp text-lg"></i>
+                                <span>Buka WhatsApp & Kirim Pesan</span>
+                            </button>
+                            <button onclick="router.navigate('home')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-2xl text-xs transition">
+                                Kembali ke Beranda
+                            </button>
+                        </div>
+                    </div>
+                `;
+            },
+            renderInfo() {
+                const settings = DB.getSettings();
+                const schedules = DB.getPosyanduSchedules();
+                return `
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5">
+                            <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+                                <div class="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center text-lg"><i class="fa-solid fa-circle-info"></i></div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 text-base">Informasi Pustu Dulomo Selatan</h3>
+                                    <p class="text-xs text-slate-500">Pusat Pelayanan Kesehatan Masyarakat</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4 text-xs text-slate-700">
+                                <div class="flex items-start space-x-3">
+                                    <i class="fa-solid fa-clock text-slate-600 mt-1"></i>
+                                    <div>
+                                        <strong class="block text-slate-900">Jam Pelayanan:</strong>
+                                        <span>${settings.serviceHours}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <i class="fa-solid fa-location-dot text-slate-600 mt-1"></i>
+                                    <div>
+                                        <strong class="block text-slate-900">Alamat Lengkap:</strong>
+                                        <span>${settings.address}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <i class="fa-solid fa-phone text-slate-600 mt-1"></i>
+                                    <div>
+                                        <strong class="block text-slate-900">Kontak Resmi:</strong>
+                                        <span>${settings.phone}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Posyandu Schedule Info -->
+                        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+                            <h3 class="font-bold text-slate-900 text-base"><i class="fa-solid fa-calendar-alt text-slate-700 mr-2"></i> Jadwal Posyandu & Pelayanan</h3>
+                            <div class="space-y-3">
+                                ${schedules.map(s => `
+                                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
+                                        <h4 class="font-bold text-slate-900 text-sm">${s.title}</h4>
+                                        <p class="text-xs text-slate-700 font-semibold mt-0.5">${s.date} • ${s.time}</p>
+                                        <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${s.location}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+            renderAdminLogin() {
+                const currentTheme = DB.getTheme();
+                return `
+                    <div class="max-w-md mx-auto bg-white rounded-3xl p-8 border border-slate-200 shadow-lg space-y-6">
+                        <div class="text-center space-y-2">
+                            <div class="w-14 h-14 bg-slate-100 text-slate-700 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-xs">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <h2 class="text-xl font-extrabold text-slate-900">Login Admin / Bidan</h2>
+                            <p class="text-xs text-slate-500">Masukkan password admin untuk mengakses dashboard Pustu Dulomo Selatan.</p>
+                        </div>
+
+                        <!-- Theme Picker Selection -->
+                        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2 text-xs">
+                            <label class="block font-bold text-slate-700"><i class="fa-solid fa-palette mr-1 text-slate-600"></i> Pilih Tema Tampilan:</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" onclick="adminHandler.switchTheme('teal')" class="py-2 px-3 rounded-xl font-semibold border ${currentTheme === 'teal' ? 'bg-teal-700 text-white border-teal-700 shadow-sm' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'} transition">
+                                    <i class="fa-solid fa-circle-check mr-1"></i> Hijau Kesehatan
+                                </button>
+                                <button type="button" onclick="adminHandler.switchTheme('kia')" class="py-2 px-3 rounded-xl font-semibold border ${currentTheme === 'kia' ? 'bg-brand-kia text-white border-brand-kia shadow-sm' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'} transition">
+                                    <i class="fa-solid fa-book-medical mr-1"></i> Magenta Buku KIA
+                                </button>
+                            </div>
+                        </div>
+
+                        <form onsubmit="adminHandler.handleLogin(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Password Admin</label>
+                                <input type="password" id="admin-pass" required placeholder="Masukkan password admin" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-slate-800">
+                            </div>
+                            <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition">
+                                Masuk ke Dashboard
+                            </button>
+                        </form>
+
+                        <div class="text-center">
+                            <button onclick="router.navigate('home')" class="text-xs text-slate-500 hover:underline">← Kembali ke Beranda</button>
+                        </div>
+                    </div>
+                `;
+            },
+            renderAdminDashboard() {
+                const regs = DB.getRegistrations();
+                const schedules = DB.getPosyanduSchedules();
+                const currentTheme = DB.getTheme();
+                
+                const totalToday = regs.filter(r => r.createdAt && r.createdAt.startsWith('2026-09-29')).length;
+                const totalHamil = regs.filter(r => r.serviceType === 'Pelayanan Ibu Hamil').length;
+                const totalNifas = regs.filter(r => r.serviceType === 'Pelayanan Ibu / Nifas').length;
+                const totalBalita = regs.filter(r => r.serviceType === 'Pelayanan Bayi & Balita').length;
+
+                return `
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <span class="text-xs text-slate-400 font-semibold">Panel Administrator</span>
+                                <h2 class="text-lg font-extrabold text-slate-900">Dashboard Bidan Pustu</h2>
+                            </div>
+                            <div class="flex items-center space-x-2 w-full sm:w-auto flex-wrap gap-y-2">
+                                <button onclick="adminHandler.openSettingsModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-2 rounded-xl text-xs transition"><i class="fa-solid fa-gear mr-1"></i> Pengaturan</button>
+                                <button onclick="adminHandler.openPasswordModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-2 rounded-xl text-xs transition"><i class="fa-solid fa-key mr-1"></i> Ganti Password</button>
+                                <button onclick="adminHandler.logout()" class="bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold px-3 py-2 rounded-xl text-xs transition"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Logout</button>
+                            </div>
+                        </div>
+
+                        <!-- Theme Switcher in Dashboard -->
+                        <div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-palette text-slate-600"></i>
+                                <span class="text-xs font-bold text-slate-700">Tema Warna Aplikasi:</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="adminHandler.switchTheme('teal')" class="px-3 py-1.5 rounded-xl text-xs font-semibold border ${currentTheme === 'teal' ? 'bg-teal-700 text-white border-teal-700' : 'bg-slate-100 text-slate-700 border-slate-200'} transition">Hijau Kesehatan</button>
+                                <button onclick="adminHandler.switchTheme('kia')" class="px-3 py-1.5 rounded-xl text-xs font-semibold border ${currentTheme === 'kia' ? 'bg-brand-kia text-white border-brand-kia' : 'bg-slate-100 text-slate-700 border-slate-200'} transition">Magenta Buku KIA</button>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+                                <span class="text-xs font-semibold text-slate-400">Hari Ini</span>
+                                <div class="text-2xl font-extrabold text-slate-900">${totalToday}</div>
+                                <span class="text-[10px] text-emerald-600 font-medium">Pendaftaran Baru</span>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+                                <span class="text-xs font-semibold text-slate-400">Ibu Hamil</span>
+                                <div class="text-2xl font-extrabold text-rose-600">${totalHamil}</div>
+                                <span class="text-[10px] text-slate-500">Total Pasien</span>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+                                <span class="text-xs font-semibold text-slate-400">Ibu / Nifas</span>
+                                <div class="text-2xl font-extrabold text-purple-600">${totalNifas}</div>
+                                <span class="text-[10px] text-slate-500">Total Pasien</span>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+                                <span class="text-xs font-semibold text-slate-400">Bayi & Balita</span>
+                                <div class="text-2xl font-extrabold text-blue-600">${totalBalita}</div>
+                                <span class="text-[10px] text-slate-500">Total Pasien</span>
+                            </div>
+                        </div>
+
+                        <!-- Admin Posyandu Schedule Management Board -->
+                        <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-calendar-days text-slate-700 mr-2"></i> Papan Kelola Jadwal Posyandu & Pelayanan</h3>
+                                <button onclick="adminHandler.openAddScheduleModal()" class="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-black transition"><i class="fa-solid fa-plus mr-1"></i> Tambah Jadwal</button>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                ${schedules.map(s => `
+                                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col justify-between space-y-2">
+                                        <div>
+                                            <h4 class="font-bold text-slate-900 text-xs">${s.title}</h4>
+                                            <p class="text-[11px] text-slate-700 font-semibold mt-1">${s.date} • ${s.time}</p>
+                                            <p class="text-[10px] text-slate-500 mt-0.5"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${s.location}</p>
+                                        </div>
+                                        <div class="text-right pt-2 border-t border-slate-200/60">
+                                            <button onclick="adminHandler.deleteSchedule('${s.id}')" class="text-[10px] text-rose-600 font-semibold hover:underline"><i class="fa-solid fa-trash mr-1"></i> Hapus</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Registrations Table -->
+                        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                <h3 class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-clipboard-list text-slate-700 mr-2"></i> Daftar Pendaftaran Masuk</h3>
+                                <div class="flex items-center space-x-2 w-full sm:w-auto">
+                                    <input type="text" id="search-input" oninput="adminHandler.filterTable()" placeholder="Cari nama / ID..." class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs w-full sm:w-48 focus:outline-none focus:ring-1 focus:ring-slate-800">
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 border-b border-slate-200 font-semibold">
+                                            <th class="p-3">No. Pendaftaran</th>
+                                            <th class="p-3">Nama Pasien</th>
+                                            <th class="p-3">Layanan</th>
+                                            <th class="p-3">Tgl Kunjungan</th>
+                                            <th class="p-3">No. HP</th>
+                                            <th class="p-3">Status</th>
+                                            <th class="p-3 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-table-body" class="divide-y divide-slate-100 text-slate-700">
+                                        ${regs.map((r) => `
+                                            <tr class="hover:bg-slate-50/80 transition">
+                                                <td class="p-3 font-bold text-slate-900">${r.registrationNumber}</td>
+                                                <td class="p-3 font-semibold">${r.formData.full_name || r.formData.baby_name}</td>
+                                                <td class="p-3"><span class="px-2 py-1 rounded-full text-[10px] font-semibold ${r.serviceType.includes('Hamil') ? 'bg-rose-50 text-rose-700' : r.serviceType.includes('Nifas') ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'}">${r.serviceType}</span></td>
+                                                <td class="p-3">${r.visitDate} (${r.visitTime})</td>
+                                                <td class="p-3">${r.formData.phone}</td>
+                                                <td class="p-3">
+                                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${r.registrationStatus === 'DIKONFIRMASI_BIDAN' ? 'bg-emerald-100 text-emerald-800' : r.registrationStatus === 'SELESAI' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}">
+                                                        ${r.registrationStatus}
+                                                    </span>
+                                                </td>
+                                                <td class="p-3 text-center">
+                                                    <button onclick="adminHandler.openDetailModal('${r.id}')" class="bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-700 font-semibold px-3 py-1.5 rounded-xl transition">
+                                                        Detail
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
+        const formHandler = {
+            selectService(type) {
+                AppState.selectedService = type;
+                router.navigate('form');
+            },
+            toggleTerms(checkbox) {
+                const submitBtn = document.getElementById('submit-btn');
+                if (!submitBtn) return;
+                AppState.agreedToTerms = checkbox.checked;
+                if (checkbox.checked) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                    submitBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'text-white', 'shadow-md');
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                    submitBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700', 'text-white', 'shadow-md');
+                }
+            },
+            handleSubmitForm(event) {
+                if (event) event.preventDefault();
+                const form = document.getElementById('registration-form');
+                if (!form) return;
+                
+                const formDataObj = new FormData(form);
+                for (let [key, value] of formDataObj.entries()) {
+                    AppState.formData[key] = value;
+                }
+
+                if (!AppState.formData.visit_date) {
+                    alert('Silakan pilih tanggal kunjungan.');
+                    return;
+                }
+                const nikVal = AppState.formData.nik || AppState.formData.child_nik;
+                if (nikVal && nikVal.length > 0 && nikVal.length !== 16) {
+                    alert('NIK harus terdiri dari 16 digit.');
+                    return;
+                }
+                if (!AppState.formData.phone || AppState.formData.phone.length < 10) {
+                    alert('Nomor WhatsApp belum lengkap.');
+                    return;
+                }
+
+                router.navigate('review');
+            },
+            confirmAndSubmit() {
+                if (!AppState.agreedToTerms) {
+                    alert('Anda harus menyetujui persyaratan terlebih dahulu.');
+                    return;
+                }
+
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+                const randomNum = Math.floor(1000 + Math.random() * 9000);
+                const regNumber = `PDS-${dateStr}-${randomNum}`;
+                const patientId = 'pat-' + Math.floor(10000 + Math.random() * 90000);
+
+                const newReg = {
+                    id: 'reg-' + Date.now(),
+                    registrationNumber: regNumber,
+                    patientId: patientId,
+                    serviceType: AppState.selectedService,
+                    visitDate: AppState.formData.visit_date,
+                    visitTime: AppState.formData.visit_time,
+                    purpose: AppState.formData.purpose,
+                    complaint: AppState.formData.complaint || 'Tidak ada keluhan',
+                    notes: AppState.formData.notes || '-',
+                    formData: { ...AppState.formData },
+                    whatsappStatus: 'READY',
+                    registrationStatus: 'TERDAFTAR',
+                    adminStatus: 'BARU',
+                    createdAt: now.toISOString(),
+                    history: [
+                        { timestamp: now.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }), text: 'Pendaftaran dibuat & tersimpan di sistem' }
+                    ]
+                };
+
+                DB.saveRegistration(newReg);
+                DB.savePatient({ id: patientId, ...AppState.formData });
+                AppState.lastCreatedRegistration = newReg;
+
+                const settings = DB.getSettings();
+                const name = AppState.formData.full_name || AppState.formData.baby_name;
+                const nik = AppState.formData.nik || AppState.formData.child_nik || AppState.formData.kk_number;
+                
+                const message = encodeURIComponent(
+                    `━━━━━━━━━━━━━━━━━━\n` +
+                    `🏥 PENDAFTARAN PELAYANAN PUSTU\n` +
+                    `━━━━━━━━━━━━━━━━━━\n\n` +
+                    `🆔 No. Pendaftaran: ${regNumber}\n` +
+                    `👩‍⚕️ JENIS PELAYANAN: ${AppState.selectedService}\n\n` +
+                    `📅 RENCANA KUNJUNGAN\n` +
+                    `Tanggal: ${AppState.formData.visit_date}\n` +
+                    `Waktu: ${AppState.formData.visit_time}\n\n` +
+                    `📌 TUJUAN: ${AppState.formData.purpose}\n` +
+                    `👤 IDENTITAS\n` +
+                    `Nama: ${name}\n` +
+                    `NIK/KK: ${nik}\n` +
+                    `Alamat: ${AppState.formData.address}, Kel. ${AppState.formData.kelurahan}\n\n` +
+                    `📱 KONTAK WA: ${AppState.formData.phone}\n\n` +
+                    `━━━━━━━━━━━━━━━━━━\n` +
+                    `Mohon konfirmasi penerimaan pendaftaran.`
+                );
+
+                const waUrl = `https://wa.me/${settings.whatsappNumber}?text=${message}`;
+                window.open(waUrl, '_blank');
+                router.navigate('success');
+            },
+            openWhatsAppAgain() {
+                if (!AppState.lastCreatedRegistration) return;
+                const reg = AppState.lastCreatedRegistration;
+                const settings = DB.getSettings();
+                const name = reg.formData.full_name || reg.formData.baby_name;
+                const nik = reg.formData.nik || reg.formData.child_nik || reg.formData.kk_number;
+
+                const message = encodeURIComponent(
+                    `━━━━━━━━━━━━━━━━━━\n` +
+                    `🏥 PENDAFTARAN PELAYANAN PUSTU\n` +
+                    `━━━━━━━━━━━━━━━━━━\n\n` +
+                    `🆔 No. Pendaftaran: ${reg.registrationNumber}\n` +
+                    `👩‍⚕️ JENIS PELAYANAN: ${reg.serviceType}\n` +
+                    `📅 Kunjungan: ${reg.visitDate} (${reg.visitTime})\n` +
+                    `👤 Nama: ${name} | NIK: ${nik}\n` +
+                    `📱 WA: ${reg.formData.phone}\n`
+                );
+                window.open(`https://wa.me/${settings.whatsappNumber}?text=${message}`, '_blank');
+            }
+        };
+
+        const adminHandler = {
+            switchTheme(themeName) {
+                DB.saveTheme(themeName);
+                router.render();
+            },
+            handleLogin(event) {
+                event.preventDefault();
+                const pass = document.getElementById('admin-pass').value;
+                const correctPass = DB.getAdminPassword();
+                if (pass === correctPass) {
+                    AppState.adminLoggedIn = true;
+                    router.navigate('admin');
+                } else {
+                    alert('Password admin salah.');
+                }
+            },
+            logout() {
+                AppState.adminLoggedIn = false;
+                router.navigate('home');
+            },
+            filterTable() {
+                const query = document.getElementById('search-input').value.toLowerCase();
+                const rows = document.querySelectorAll('#admin-table-body tr');
+                rows.forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(query) ? '' : 'none';
+                });
+            },
+            openPasswordModal() {
+                const modal = document.getElementById('modal-container');
+                modal.classList.remove('hidden');
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                            <h3 class="font-bold text-base text-slate-900"><i class="fa-solid fa-key text-slate-700 mr-2"></i> Ubah Password Admin</h3>
+                            <button onclick="router.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+                        </div>
+
+                        <form onsubmit="adminHandler.saveNewPassword(event)" class="space-y-3 text-xs">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Password Lama</label>
+                                <input type="password" id="old-pass" required placeholder="Masukkan password lama" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Password Baru</label>
+                                <input type="password" id="new-pass" required placeholder="Masukkan password baru" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Konfirmasi Password Baru</label>
+                                <input type="password" id="confirm-pass" required placeholder="Ulangi password baru" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                            </div>
+                            <div class="pt-2 flex justify-end space-x-2">
+                                <button type="button" onclick="router.closeModal()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-semibold">Batal</button>
+                                <button type="submit" class="bg-slate-900 text-white px-4 py-2 rounded-xl font-semibold shadow-sm">Simpan Password</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+            },
+            saveNewPassword(event) {
+                event.preventDefault();
+                const oldP = document.getElementById('old-pass').value;
+                const newP = document.getElementById('new-pass').value;
+                const confP = document.getElementById('confirm-pass').value;
+
+                if (oldP !== DB.getAdminPassword()) {
+                    alert('Password lama salah.');
+                    return;
+                }
+                if (newP !== confP) {
+                    alert('Konfirmasi password baru tidak cocok.');
+                    return;
+                }
+                if (newP.length < 5) {
+                    alert('Password baru minimal 5 karakter.');
+                    return;
+                }
+
+                DB.saveAdminPassword(newP);
+                alert('Password admin berhasil diubah!');
+                router.closeModal();
+            },
+            openAddScheduleModal() {
+                const modal = document.getElementById('modal-container');
+                modal.classList.remove('hidden');
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                            <h3 class="font-bold text-base text-slate-900"><i class="fa-solid fa-calendar-plus text-slate-700 mr-2"></i> Tambah Jadwal Posyandu</h3>
+                            <button onclick="router.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+                        </div>
+                        <form onsubmit="adminHandler.saveScheduleForm(event)" class="space-y-3 text-xs">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Kegiatan</label>
+                                <input type="text" id="sch-title" required placeholder="Contoh: Posyandu Melati 2" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Waktu / Hari</label>
+                                <input type="text" id="sch-date" required placeholder="Contoh: Setiap Kamis Minggu ke-2" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Jam</label>
+                                <input type="text" id="sch-time" required placeholder="Contoh: 08:30 WITA" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Lokasi</label>
+                                <input type="text" id="sch-loc" required placeholder="Contoh: Pustu Dulomo Selatan" class="w-full px-3 py-2.5 rounded-xl border border-slate-300">
+                            </div>
+                            <div class="pt-2 flex justify-end space-x-2">
+                                <button type="button" onclick="router.closeModal()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-semibold">Batal</button>
+                                <button type="submit" class="bg-slate-900 text-white px-4 py-2 rounded-xl font-semibold shadow-sm">Simpan Jadwal</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+            },
+            saveScheduleForm(event) {
+                event.preventDefault();
+                const newSched = {
+                    id: 'pos-' + Date.now(),
+                    title: document.getElementById('sch-title').value,
+                    date: document.getElementById('sch-date').value,
+                    time: document.getElementById('sch-time').value,
+                    location: document.getElementById('sch-loc').value
+                };
+                DB.savePosyanduSchedule(newSched);
+                router.closeModal();
+                router.navigate('admin');
+            },
+            deleteSchedule(id) {
+                if (confirm('Yakin ingin menghapus jadwal ini?')) {
+                    DB.deletePosyanduSchedule(id);
+                    router.navigate('admin');
+                }
+            },
+            openDetailModal(id) {
+                const regs = DB.getRegistrations();
+                const r = regs.find(item => item.id === id);
+                if (!r) return;
+
+                const modal = document.getElementById('modal-container');
+                modal.classList.remove('hidden');
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto space-y-4">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-slate-500">Detail Pendaftaran</span>
+                                <h3 class="font-black text-lg text-slate-900">${r.registrationNumber}</h3>
+                            </div>
+                            <button onclick="router.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-4 rounded-2xl">
+                            <div><span class="text-slate-400">Layanan:</span> <strong class="text-slate-800">${r.serviceType}</strong></div>
+                            <div><span class="text-slate-400">Tgl Kunjungan:</span> <strong class="text-slate-800">${r.visitDate} (${r.visitTime})</strong></div>
+                            <div><span class="text-slate-400">Nama:</span> <strong class="text-slate-800">${r.formData.full_name || r.formData.baby_name}</strong></div>
+                            <div><span class="text-slate-400">No. HP:</span> <strong class="text-emerald-700">${r.formData.phone}</strong></div>
+                            <div class="col-span-2"><span class="text-slate-400">Tujuan:</span> <strong class="text-slate-800">${r.purpose}</strong></div>
+                            <div class="col-span-2"><span class="text-slate-400">Keluhan:</span> <strong class="text-slate-800">${r.complaint}</strong></div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-slate-700">Ubah Status Pendaftaran:</label>
+                            <select id="status-select" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs">
+                                <option value="TERDAFTAR" ${r.registrationStatus === 'TERDAFTAR' ? 'selected' : ''}>Terdaftar</option>
+                                <option value="DIKONFIRMASI_BIDAN" ${r.registrationStatus === 'DIKONFIRMASI_BIDAN' ? 'selected' : ''}>Dikonfirmasi Bidan</option>
+                                <option value="DIJADWALKAN" ${r.registrationStatus === 'DIJADWALKAN' ? 'selected' : ''}>Dijadwalkan</option>
+                                <option value="SELESAI" ${r.registrationStatus === 'SELESAI' ? 'selected' : ''}>Selesai</option>
+                                <option value="DIBATALKAN" ${r.registrationStatus === 'DIBATALKAN' ? 'selected' : ''}>Dibatalkan</option>
+                            </select>
+                        </div>
+
+                        <div class="pt-2 flex justify-end space-x-2">
+                            <button onclick="router.closeModal()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-semibold">Tutup</button>
+                            <button onclick="adminHandler.saveStatusUpdate('${r.id}')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm">Simpan Status</button>
+                        </div>
+                    </div>
+                `;
+            },
+            saveStatusUpdate(id) {
+                const newStatus = document.getElementById('status-select').value;
+                DB.updateRegistrationStatus(id, newStatus, newStatus === 'DIKONFIRMASI_BIDAN' ? 'DIKONFIRMASI' : 'BARU', 'Diperbarui oleh Bidan');
+                router.closeModal();
+                router.navigate('admin');
+            },
+            openSettingsModal() {
+                const settings = DB.getSettings();
+                const modal = document.getElementById('modal-container');
+                modal.classList.remove('hidden');
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                            <h3 class="font-bold text-base text-slate-900"><i class="fa-solid fa-gear text-slate-700 mr-2"></i> Pengaturan Pustu</h3>
+                            <button onclick="router.closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+                        </div>
+
+                        <form onsubmit="adminHandler.saveSettingsForm(event)" class="space-y-3 text-xs">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Nomor WhatsApp Bidan (Format 62...)</label>
+                                <input type="text" id="set-wa" value="${settings.whatsappNumber}" required class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Jam Pelayanan</label>
+                                <input type="text" id="set-hours" value="${settings.serviceHours}" required class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Alamat Pustu</label>
+                                <input type="text" id="set-address" value="${settings.address}" required class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Nomor Telepon</label>
+                                <input type="text" id="set-phone" value="${settings.phone}" required class="w-full px-3 py-2 rounded-xl border border-slate-300">
+                            </div>
+                            <div class="pt-2 flex justify-end space-x-2">
+                                <button type="button" onclick="router.closeModal()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-semibold">Batal</button>
+                                <button type="submit" class="bg-slate-900 text-white px-4 py-2 rounded-xl font-semibold">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+            },
+            saveSettingsForm(event) {
+                event.preventDefault();
+                const newSettings = {
+                    facilityName: "Puskesmas Pembantu Dulomo Selatan",
+                    whatsappNumber: document.getElementById('set-wa').value,
+                    serviceHours: document.getElementById('set-hours').value,
+                    address: document.getElementById('set-address').value,
+                    phone: document.getElementById('set-phone').value,
+                    otherConfig: "Membawa KTP/KK dan Buku KIA."
+                };
+                DB.saveSettings(newSettings);
+                alert('Pengaturan berhasil diperbarui!');
+                router.closeModal();
+                router.navigate('admin');
+            }
+        };
+
+        window.onload = function () {
+            applyTheme();
+            router.navigate('home');
+        };
+    </script>
+</body>
+</html>
